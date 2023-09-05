@@ -4,16 +4,17 @@
 #include <string.h>
 #include <pthread.h>
 
-#define MAX_THREADS 4 // Ajusta el número de hilos según tus necesidades
+#define MAX_THREADS 4 //number of threads
 
-// Estructura para pasar argumentos a los hilos
+// structur to send args to the threads
 typedef struct {
-    int id;           // ID del hilo
-    int **a;          // Matriz A
-    int **b;          // Matriz B
-    int **result;     // Matriz resultado
-    int n;            // Tamaño de las matrices
-    int num_threads;  // Número total de hilos
+    int id;           // thread ID
+    int **a;          // Matrix a
+    int **b;          // Matrix b
+    int **result;     // Matrix result
+    int n;            // matrix size
+    int num_threads;  // total number of threads
+    int verbose;      // parameter to print
 } ThreadArgs;
 
 //random number generation
@@ -49,7 +50,7 @@ void printMatrix(int **matrixPointer, int *n){
 
 }
 
-// Función para multiplicar una porción de las matrices y medir el tiempo
+// Function to multiply a portion of matrices and measure time
 void *multiplyMatrixSegment(void *args) {
     ThreadArgs *threadArgs = (ThreadArgs *)args;
     int id = threadArgs->id;
@@ -72,23 +73,24 @@ void *multiplyMatrixSegment(void *args) {
     }
 
     t = clock() - t;
-    double time_taken = ((double)t) / CLOCKS_PER_SEC; // Tiempo en segundos
-
-    printf("Hilo %d: El tiempo de ejecución fue de %f segundos\n", id, time_taken);
+    double time_taken = ((double)t) / CLOCKS_PER_SEC; // Time in seconds
+    if(threadArgs->verbose){
+      printf("(%d)Thread# %d: the multiplication took %f seconds to execute\n",n, id, time_taken);
+    }
 
     pthread_exit(NULL);
 }
 
 int main(int argc, char *argv[]) {
     int n = atoi(argv[1]);
-    
+   
     int verbose = 0;
 
-	if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
+if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
         verbose = 1;
     }
 
-    // Crear matrices a, b y resultado
+    // Create matrixes a, b & result
     int **a = (int **)malloc(n * sizeof(int *));
     int **b = (int **)malloc(n * sizeof(int *));
     int **axb = (int **)malloc(n * sizeof(int *));
@@ -99,10 +101,10 @@ int main(int argc, char *argv[]) {
     }
 
     //filling the matrix  
-    fillMatrix(a, n);
-    fillMatrix(b, n);
+    fillMatrix(a, &n);
+    fillMatrix(b, &n);
 
-    // Crear hilos
+    // Create threads
     pthread_t threads[MAX_THREADS];
     ThreadArgs threadArgs[MAX_THREADS];
 
@@ -113,29 +115,28 @@ int main(int argc, char *argv[]) {
         threadArgs[i].result = axb;
         threadArgs[i].n = n;
         threadArgs[i].num_threads = MAX_THREADS;
+        threadArgs[i].verbose = verbose;
 
         pthread_create(&threads[i], NULL, multiplyMatrixSegment, &threadArgs[i]);
     }
 
-    // Esperar a que los hilos terminen
+    // wait for the threads finish
     for (int i = 0; i < MAX_THREADS; i++) {
         pthread_join(threads[i], NULL);
     }
 
-    // Imprimir resultados (sin cambios)
-    if(*verbose){
-	printf("The matrix a is: \n");
-  	printMatrix(a, n);
-	printf("The matrix b is: \n");
-	printMatrix(b, n);			
+    // print results
+    if(verbose){
+		printf("The matrix a is: \n");
+  		printMatrix(a, &n);
+		printf("The matrix b is: \n");
+		printMatrix(b, &n);
     	printf("The product of the two matrices is: \n");
-    	printMatrix(axb, n);
+    	printMatrix(axb, &n);
     }
-    printf("(%d) the multiplication took %f seconds to execute \n", *n,time_taken);
     free(a);
     free(b);
     free(axb);
-	
 
     return 0;
 }
