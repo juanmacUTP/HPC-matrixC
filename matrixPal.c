@@ -14,7 +14,6 @@ typedef struct {
     int **result;     // Matrix result
     int n;            // matrix size
     int num_threads;  // total number of threads
-    int verbose;      // parameter to print
 } ThreadArgs;
 
 //random number generation
@@ -74,9 +73,8 @@ void *multiplyMatrixSegment(void *args) {
 
     t = clock() - t;
     double time_taken = ((double)t) / CLOCKS_PER_SEC; // Time in seconds
-    if(threadArgs->verbose){
-      printf("(%d)Thread# %d: the multiplication took %f seconds to execute\n",n, id, time_taken);
-    }
+    printf("(%d)Thread# %d: the multiplication took %f seconds to execute\n",n, id, time_taken);
+    
 
     pthread_exit(NULL);
 }
@@ -115,7 +113,6 @@ if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
         threadArgs[i].result = axb;
         threadArgs[i].n = n;
         threadArgs[i].num_threads = MAX_THREADS;
-        threadArgs[i].verbose = verbose;
 
         pthread_create(&threads[i], NULL, multiplyMatrixSegment, &threadArgs[i]);
     }
