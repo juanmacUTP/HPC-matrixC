@@ -6,15 +6,16 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-// Estructura para pasar argumentos a los procesos
+#define MAX_PROCESSES 10 //number of processes
+
+// struct to save the processes's args
 typedef struct {
     int id;           // process ID
     int **a;          // Matrix A
     int **b;          // Matrix B
-    int **result;     // result Matrix 
+    int **result;     // result Matrix
     int n;            // matrix size
     int num_processes; // total number of process
-    int verbose;      // verbose parameter
 } ProcessArgs;
 
 
@@ -35,7 +36,7 @@ void fillMatrix(int **matrixPointer, int *n){
 }
 
 
-void printMatrix(int **matrixPointer, int *n){   
+void printMatrix(int **matrixPointer, int *n){  
     int i, j;
    
     for (i = 0; i < *n; i++) {
@@ -48,12 +49,12 @@ void printMatrix(int **matrixPointer, int *n){
 }
 
 
-// Función para multiplicar una porción de las matrices y medir el tiempo
+// Function to multiply a portion of the matrixes
 void multiplyMatrixSegment(ProcessArgs *processArgs) {
     int id = processArgs->id;
     int n = processArgs->n;
     int num_processes = processArgs->num_processes;
-    int verbose = processArgs->verbose;
+   
 
     int start_row = id * (n / num_processes);
     int end_row = (id == num_processes - 1) ? n : (id + 1) * (n / num_processes);
@@ -73,14 +74,7 @@ void multiplyMatrixSegment(ProcessArgs *processArgs) {
     t = clock() - t;
     double time_taken = ((double)t) / CLOCKS_PER_SEC; // Tiempo en segundos
 
-    if (verbose) {
-        printf("Hilo %d:\n", id);
-        printf("El tiempo de ejecución fue de %f segundos\n", time_taken);
-        printf("Matriz resultante:\n");
-        printMatrix(processArgs->result, &n);
-    } else {
-        printf("Hilo %d: El tiempo de ejecución fue de %f segundos\n", id, time_taken);
-    }
+    printf("[%d] Hilo %d: El tiempo de ejecucion fue de %f segundos\n",n, id, time_taken);
 }
 
 int main(int argc, char *argv[]) {
@@ -107,7 +101,7 @@ if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
     fillMatrix(b, &n);
 
 
-    
+   
 
     // Create processes
     pid_t child_pids[MAX_PROCESSES];
@@ -129,7 +123,7 @@ if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
             multiplyMatrixSegment(&processArgs[i]);
             exit(0); // Exit the child process after completing its work
         } else if (child_pid > 0) {
-            // Process fahter: to save the PID of process son
+            // Process father: to save the PID of process son
             child_pids[i] = child_pid;
         } else {
             // Error to create process son
@@ -138,21 +132,21 @@ if (argc == 3 && strcmp(argv[2], "verbose") == 0) {
         }
     }
 
-	// Wait for child processes to finish
+// Wait for child processes to finish
     for (int i = 0; i < MAX_PROCESSES; i++) {
         waitpid(child_pids[i], NULL, 0);
     }
 
-	//matrix print if verbose parameter is present
+//matrix print if verbose parameter is present
     if(verbose){
-		printf("The matrix a is: \n");
-  		printMatrix(a, &n);
-		printf("The matrix b is: \n");
-		printMatrix(b, &n);
-    	printf("The product of the two matrices is: \n");
-    	printMatrix(axb, &n);
+printf("The matrix a is: \n");
+  printMatrix(a, &n);
+printf("The matrix b is: \n");
+printMatrix(b, &n);
+    printf("The product of the two matrices is: \n");
+    printMatrix(axb, &n);
     }
-    
+   
     //free memory
     free(a);
     free(b);
